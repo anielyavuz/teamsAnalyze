@@ -1,0 +1,63 @@
+# --- secrets and environment (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+secrets/
+*secret*
+*credentials*
+keys.json
+
+# --- this repository is documentation only: block accidental code artefacts ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+node_modules/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- data, dumps and generated reports ---
+*.dump
+*.sql
+*.sql.gz
+*.backup
+*.bak
+*.csv
+output.html
+*.sqlite
+*.db
+
+# --- logs ---
+*.log
+logs/
+
+# --- screenshots and images (only curated images under docs/img are allowed) ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+!docs/img/**
+
+# --- editor / OS junk ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.claude/
