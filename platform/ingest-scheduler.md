@@ -68,7 +68,7 @@ counted as a failed step for the exit code (it is a configuration state, already
 | Kind of step | Cadence | Window |
 |---|---|---|
 | Directory | every run | full list |
-| Event records (e.g. call records) | every run | last 6 h (records appear 15–30 min after the event and may be enriched later). Plus once a day a 48 h window to catch late version bumps outside the short window |
+| Event records (e.g. call records) | every run | last 6 h (records appear 15–30 min after the event and may be enriched later). Plus once a day a 48 h window to catch late version bumps outside the short window. **After downtime the window widens automatically to cover the gap since the last successful run (cap 719 h)** — see modules/call-ingest/DESIGN.md §6 "Catch-up after downtime" |
 | Device/room state snapshots | every run | current state |
 | Usage reports (daily CSVs) | min age 6 h | report-specific (e.g. last 4 days + never-fetched days) |
 | Service health | min age 1 h | full list |

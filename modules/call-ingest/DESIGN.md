@@ -222,7 +222,8 @@ Raw meeting JSON ≈ 3 KB + ~14 KB per participant session (measured on a small 
 ## 6 Ingest / request flow
 
 Entry: the scheduler calls `ingest_calls(hours)` (default 24 for manual runs; 6 for scheduled runs every
-15 minutes; a periodic wide sweep of 48 h once a day; a one-off backfill of 719 h on first install).
+15 minutes, **automatically widened after downtime — see "Catch-up after downtime" below**; a periodic wide
+sweep of 48 h once a day; a one-off backfill of 719 h on first install).
 
 1. Permission gate: feature `calls` must be granted and the `calls` package enabled; otherwise log
    `ingest.skipped` / `ingest.module_off` and return without any request.
@@ -268,8 +269,20 @@ Measured capacity (fake Graph, 200 ms latency): sequential 2.4 rec/s → 8 worke
 60 per page) + ~70 min details.
 
 Known window gap: the list filters by `startDateTime`. A record that started 3 h ago whose `version` increases
-now is not seen by a 2 h window. Mitigation: scheduled window 6 h + daily 48 h sweep. Preferred improvement:
-start the window at the last successful run's `window_end` minus a safety margin.
+now is not seen by a 2 h window. Mitigation: scheduled window 6 h + daily 48 h sweep.
+
+**Catch-up after downtime (MUST, learned from a real incident, Nov 2026):** a fixed "last 6 h" window silently and
+permanently loses every record that ended while the collector or its database was down (the reference lost a
+94-hour gap after the database sat in crash recovery; the records were still in Graph but nobody asked). The
+scheduled window is therefore computed, not fixed:
+
+- `last_end` = max `window_end` of successful (`ok`/`partial`) call-ingest runs.
+- If `now − last_end + 1 h ≤ 6 h` → normal 6 h window. Otherwise window = `now − last_end + 1 h` (rounded up),
+  capped at 719 h. No successful run ever → 719 h.
+- A widened window logs WARNING `ingest.catchup` (`hours`, `last_window_end`).
+- This only closes the gap since the *last* successful run. A hole further back (e.g. found later, after newer
+  runs succeeded) needs a manual `--hours 719` backfill while it is still inside Graph's 30-day retention.
+- Pair it with an alert when the last successful call ingest is older than ~1 h (collector or DB down).
 
 ### Reprocess
 
@@ -311,7 +324,7 @@ run. History of the reference (keep numbering continuity or restart at 1 with th
 
 | Class | Code | Rule |
 |---|---|---|
-| 1:1 call | `p2p` | `call_type = peerToPeer` |
+| 1:1 call | `p2p` | `call_type = peerToPeer` — **including escalated 1:1** (below) |
 | Meeting (linked) | `meeting` | `call_type ≠ peerToPeer` (including `unknown`) AND `join_url` not null |
 | Group call (unlinked) | `group` | `call_type ≠ peerToPeer` AND `join_url` null |
 
@@ -319,6 +332,16 @@ run. History of the reference (keep numbering continuity or restart at 1 with th
 participant transfers the call to another device) is a `groupCall` record whose first session is a
 user-to-user leg; the list row shows "A → B · group call" (timeline event `p2p_to_group`). Expose the class as a
 generated column or SQL function `call_class(call_type, join_url)`; never re-implement the rule in UI code.
+
+**Escalated 1:1 (derive rule, owner decision Nov 2026):** when someone starts recording/transcription in a 1:1
+call, Teams escalates it and Graph stores it as `groupCall` with no join URL — it then wrongly lands in meeting
+analytics. Rule in the derive layer: `type = groupCall` AND no `joinWebUrl` AND **exactly 2 human participants
+after removing bots** → stored `call_type = peerToPeer`, with `derived.graph_type = "groupCall"` and
+`derived.escalated = true`. Caller = organizer (the person who started it), callee = the other person (session
+endpoints are person↔media server, so they cannot tell the sides). 3+ people stay `group`. Label in the UI:
+"1:1 call (became a group call when recording started)" when a recorder bot joined, otherwise "1:1 call
+(recorded by Teams as a group call)". Diagnostic code `escalated_p2p`. Observed: 2-person no-bot `groupCall`
+records also occur.
 (Reference inconsistency to avoid: one daily view counted only `groupCall` as meetings and treated an empty
 `join_url` differently from null.)
 
