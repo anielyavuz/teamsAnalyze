@@ -80,7 +80,8 @@ the device's IP/hostname (TLS; device certificates are often self-signed → cer
 | 2026-11-08 | The device writes every web command into its own log (`User <u>/web/vega about to execute command … from <ip>`) | Expected noise; filter our own collector lines in derivation |
 | 2026-11-08 | A session with `Origin internal/xows`, user `__extension_xapi_sundroid__` exists permanently (the Teams Android extension) | Never terminate sessions we did not create |
 | 2026-11-08 | Teams Android logs are under `extensions/msteams/logcat*.log`; rotation siblings `.first`, `.previous`, `.truncated` | Rotation handling (§6.4) |
-| 2026-11-08 | Roles available to `User Add`: Admin, Audit, Integrator, RoomControl, User | Prefer a dedicated collector account; **which minimum role can read `/web/logs` is NOT yet verified** (§14) |
+| 2026-11-08 | Roles available to `User Add`: Admin, Audit, Integrator, RoomControl, User | — |
+| 2026-11-08 | **Tested with temporary users:** `Audit` and `Integrator` can sign in to the web UI but get **403** on `/web/logs/files`, `/web/logs/file` (Range) and `/web/logs/bundle`; both **can** read xAPI status (`/getxml` 200) | **Reading logs requires the Admin role.** See §6.5 recommendation |
 
 ## 5 Data model (described; no DDL)
 
@@ -211,9 +212,24 @@ Configurable per site; the list endpoint shows what exists on each firmware.
 - **Add**: admin enters host, username, password (write-only form) → encrypted per `secrets.md` → status
   `unverified` → admin presses **Test once** (sign-in + `Session List` + terminate the test session) → `ok` or
   `auth_failed`. Polling starts only from `ok`.
-- **Recommended account**: a dedicated collector user per device (`xCommand UserManagement User Add
-  Username: <collector> Role: <minimum role> Passphrase: … PassphraseChangeRequired: False`), not the shared
-  `admin`. The admin credential is stored only if the operator wants rotation of the admin account (§6.6).
+- **Recommended account (tested 2026-11-08):** log files are only readable with the **Admin** role, so the
+  collector cannot run with a low-privilege role. Recommendation:
+  1. Create a **dedicated collector user with the Admin role** on every device (`xCommand UserManagement User
+     Add Username: <collector> Role: Admin Passphrase: <unique> PassphraseChangeRequired: False`) — **never
+     reuse the device's main `admin` account**. Benefits: its password can be rotated/disabled without touching
+     the people's admin account; the device's own logs show every collector action under a distinct name;
+     the collector's sessions are easy to identify and clean up (§6.2.4).
+  2. Unique password per device (generated, ≥ 24 chars), stored per `platform/secrets.md`; rotate on a schedule
+     (e.g. every 90 days) and immediately after any staff change with access.
+  3. Optional split for least privilege: an **Audit** account for status reads over Basic xAPI (`/getxml`,
+     verified to work) and the Admin collector account only for log-file reads. Doubles the credentials to
+     manage; worth it only if the customer requires it.
+  4. Because the collector account is Admin, treat the collector host as a privileged system (hardened,
+     patched, network access to device VLAN only, KEK kept off the database server).
+  5. Where possible prefer the credential-free alternative — device-pushed Syslog over TLS (§14) — once it is
+     verified to include the Teams Android logs.
+  The people's `admin` credential is stored only if the operator wants the system to rotate that account too
+  (§6.6).
 - **Replace**: new value → `unverified` → Test once → `ok`. Replacing clears `auth_failed`.
 - **Disable / delete**: polling stops; delete overwrites the ciphertext row (crypto-shred) and keeps the audit.
 - **Bulk import**: CSV of host/username/password uploaded over HTTPS, encrypted immediately, file discarded
@@ -389,8 +405,8 @@ Must pass:
 
 ## 14 Open questions / future
 
-- **Minimum role for `/web/logs`**: test whether `Audit` or `Integrator` can read log files; if yes, the
-  collector account must use it instead of `Admin`.
+- ~~Minimum role for `/web/logs`~~ — **answered 2026-11-08: Admin only** (`Audit`, `Integrator` → 403). `User`
+  and `RoomControl` not tested (lower than Audit/Integrator for this purpose). Re-test on new RoomOS versions.
 - **WebSocket event stream** (`wss://<device>/ws`, xAPI feedback): not yet tested; would replace status polling
   and give instant events.
 - **Syslog over TLS** (`Logging External`): device pushes logs — no polling, no credentials. Verify whether it
