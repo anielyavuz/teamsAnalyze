@@ -81,6 +81,9 @@ the device's IP/hostname (TLS; device certificates are often self-signed → cer
 | 2026-11-08 | A session with `Origin internal/xows`, user `__extension_xapi_sundroid__` exists permanently (the Teams Android extension) | Never terminate sessions we did not create |
 | 2026-11-08 | Teams Android logs are under `extensions/msteams/logcat*.log`; rotation siblings `.first`, `.previous`, `.truncated` | Rotation handling (§6.4) |
 | 2026-11-08 | Roles available to `User Add`: Admin, Audit, Integrator, RoomControl, User | — |
+| 2026-11-08 | A suffix Range larger than the file (`bytes=-N`, N > size) returns **416** (not the whole file as RFC 7233 allows) | Always request explicit ranges computed from the listed size |
+| 2026-11-08 | **External syslog tested** (`Logging External Mode On, Protocol Syslog`, UDP to a test receiver): works immediately, RFC 5424 over UDP with journald structured data, ~300–400 messages / 2 min (~1 KB/s) from RoomOS processes only (`main`, `metaproxy`, `gui`, `wpa_supplicant`, `kernel`, `systemd`, `vega`, `nginx`, `weston`, `video`). `xCommand Logging AddEvent Text: … Type: Info|Warning|Error` markers arrive. **No Teams Android (logcat) lines at all** | Syslog does **not** replace file collection for Teams logs (see §14) |
+| 2026-11-08 | ⚠️ **Side effect:** enabling external syslog restarts the device's `syslog-ng`; at that moment the Teams Android logcat files (`extensions/msteams/logcat*.log`) **stopped being written** and did **not** resume after the setting was reverted (observed ≥ 10 min; RoomOS logs kept flowing; Teams app signed in and running) | **Never toggle `Logging External` on a production device as part of this module.** If a customer enables syslog, schedule it in a maintenance window and verify Teams log files resume (device restart may be required) |
 | 2026-11-08 | **Tested with temporary users:** `Audit` and `Integrator` can sign in to the web UI but get **403** on `/web/logs/files`, `/web/logs/file` (Range) and `/web/logs/bundle`; both **can** read xAPI status (`/getxml` 200) | **Reading logs requires the Admin role.** See §6.5 recommendation |
 
 ## 5 Data model (described; no DDL)
@@ -226,8 +229,8 @@ Configurable per site; the list endpoint shows what exists on each firmware.
      manage; worth it only if the customer requires it.
   4. Because the collector account is Admin, treat the collector host as a privileged system (hardened,
      patched, network access to device VLAN only, KEK kept off the database server).
-  5. Where possible prefer the credential-free alternative — device-pushed Syslog over TLS (§14) — once it is
-     verified to include the Teams Android logs.
+  5. Device-pushed syslog is **not** an alternative for Teams logs (tested, §4.2/§14): it carries RoomOS logs
+     only.
   The people's `admin` credential is stored only if the operator wants the system to rotate that account too
   (§6.6).
 - **Replace**: new value → `unverified` → Test once → `ok`. Replacing clears `auth_failed`.
@@ -409,8 +412,11 @@ Must pass:
   and `RoomControl` not tested (lower than Audit/Integrator for this purpose). Re-test on new RoomOS versions.
 - **WebSocket event stream** (`wss://<device>/ws`, xAPI feedback): not yet tested; would replace status polling
   and give instant events.
-- **Syslog over TLS** (`Logging External`): device pushes logs — no polling, no credentials. Verify whether it
-  includes the Teams Android logcat files or only RoomOS logs; if complete, it may become the preferred mode.
+- ~~Syslog as the credential-free mode~~ — **tested 2026-11-08: syslog carries RoomOS logs only, no Teams
+  Android logs**, and enabling it disrupted local Teams log writing (§4.2). Conclusion: file collection (this
+  design) stays the only way to get Teams Android logs. Syslog may still be used *in addition* for RoomOS logs
+  by customers who already run a SIEM — configured by the customer, never toggled by this module. Open: does a
+  device restart restore the Teams logcat files after a syslog change? (lab re-test).
 - Webex Control Hub API for cloud-registered devices (logs/diagnostics in the cloud).
 - Other vendors via the same adapter interface (Logitech Sync, Yealink, Poly Lens, Neat Pulse) — each has its
   own management API and credential model.
