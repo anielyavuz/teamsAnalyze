@@ -98,9 +98,10 @@ Shared component used by every module screen (spec of content: `permissions.md` 
 - Inside: compact table (permission | required/optional | used for), or for (B) (step | method + endpoint
   template | permission | purpose | status | ms | calls | results). Status uses glyph + text + colour
   (ok success, denied danger, not_found muted, error danger).
-- Permission cell: least-privileged option first; alternatives in `--fg-3` "(alternative: X or Y)"; green ✓
-  after each held option; leading ✓ (success) if any option held else ✗ (danger); recommended option shown
-  in `--fg-disabled` when only an alternative is held. Glyphs have `aria-label` held/missing.
+- Permission cell (exact rule in permissions.md §8.3): status pill first ("✓ covered" success / "✗ missing"
+  danger, 11px, 600 weight); least-privileged option next; alternatives in `--fg-3` "(alternative, one is enough:
+  X, Y)"; each option followed by its own mark — green ✓ granted, muted ✗ not granted (name muted too).
+  Glyphs have `title`/`aria-label` granted/not granted.
 - Works in light and dark through tokens only; screenshot-tested open in both themes and at 390 px.
 
 ## 7. Data visualisation rules

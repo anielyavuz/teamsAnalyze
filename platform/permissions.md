@@ -171,13 +171,21 @@ explained is always what was done. Traces are not persisted; summary counts may 
 
 ### 8.3 Permission cell rendering rule
 
-- Options in registry order: the **least-privileged option first**, then alternatives in muted text:
-  "(alternative: X or Y)".
-- Each option the app holds gets a green ✓ next to it.
-- The row gets a leading ✓ if **any** option is held, else a red ✗.
-- When only an alternative is held, the recommended (first) option is still shown, greyed, so the operator
+Rendered form: `[✓ covered] LicenseAssignment.Read.All ✗ (alternative, one is enough: Organization.Read.All ✗, Directory.Read.All ✓)`
+
+- The row status is a **separate pill at the start**: "✓ covered" (success colours) if **any** option is held,
+  "✗ missing" (danger colours) if none. Do **not** use a bare leading ✓/✗ glyph: placed directly before the first
+  permission it reads as that permission's mark (owner feedback, Nov 2026 — a recommended-but-not-granted
+  permission looked granted).
+- Options in registry order: the **least-privileged option first**, then alternatives in muted text
+  "(alternative, one is enough: X, Y)". Wording must make clear that ONE option suffices, not all.
+- **Every option carries its own mark right after it**: held → green ✓; not held → muted ✗ and the permission
+  name muted. Exception: a single-option requirement that is held shows no extra ✓ (the pill already says it).
+- When only an alternative is held, the recommended (first) option is still shown (muted, ✗) so the operator
   can move to least privilege.
-- Status is never conveyed by colour alone (✓/✗ glyph + accessible text "held"/"missing").
+- Status is never conveyed by colour alone (glyph + pill text; `title`/accessible text "granted"/"not granted").
+- Legend line under the table: "covered = the app can make this request with at least one of the listed
+  permissions; next to each permission ✓ = granted, ✗ = not granted. Alternatives: one is enough."
 
 ## 9. Admin consent notes for operators (shown in About and deployment docs)
 

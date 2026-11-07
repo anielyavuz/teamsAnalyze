@@ -299,12 +299,21 @@ The owner requires this UI to be reproduced **exactly** in the new environment. 
 
 #### 8.2.1 Permission cell rendering rule (used in A's table and in every B entry)
 
-1. The **least-privileged option is always written first**.
-2. Alternatives follow in **muted, smaller text** as "(alternative: X or Y)".
-3. **Every option the app actually holds gets a green ✓ next to it.**
-4. The row/cell gets a **leading ✓** (green) if **any** option is held, otherwise a **leading red ✗**.
-5. If the first (recommended) option is **not** held but an alternative is, the first option is shown **greyed** (the leading ✓ is still green because an alternative is held).
+Rendered example (reference build, Nov 2026):
+`[✓ covered] LicenseAssignment.Read.All ✗ (alternative, one is enough: Organization.Read.All ✗, Directory.Read.All ✓)`
+
+1. The cell starts with a **status pill**: "✓ covered" (green) if **any** option is held, "✗ missing" (red) if none.
+   Never a bare leading glyph — next to the first permission it reads as *that* permission's mark (owner feedback).
+2. The **least-privileged option is always written first**.
+3. Alternatives follow in **muted, smaller text** as "(alternative, one is enough: X, Y)" — the wording must say
+   that one option suffices.
+4. **Every option carries its own mark**: held → green ✓; not held → muted ✗ with the name muted.
+   A single-option requirement that is held shows only the pill (no duplicate ✓).
+5. If the first (recommended) option is not held but an alternative is, it is still shown (muted, ✗) so the
+   operator sees the least-privileged choice.
 6. "Held" is read from the current access token's `roles` claim (no extra request).
+7. Legend: "covered = the app can make this request with at least one of the listed permissions; next to each
+   permission ✓ = granted, ✗ = not granted. Alternatives: one is enough."
 
 #### 8.2.2 A — "Which permissions does this need?" (top right of the page)
 
@@ -441,7 +450,7 @@ Component: `lookup`. All keys lower-case ASCII.
 **Permissions transparency acceptance (MUST, §8.2):**
 
 - Panel A opens without JavaScript, overlays content (does not shift layout), is right-aligned ≈720 px on desktop and full-width within 16 px gutters at 390 px; its six parts appear in the specified order with the four rows exactly as listed.
-- Permission cell rule, tested with token-role fixtures: (a) none held → leading red ✗, first option normal, alternatives muted; (b) only `Directory.Read.All` held → leading green ✓, first option greyed, green ✓ next to `Directory.Read.All`; (c) least-privileged held → leading ✓ and ✓ next to it; (d) several held → ✓ next to each.
+- Permission cell rule, tested with token-role fixtures: (a) none held → red "✗ missing" pill, every option followed by a muted ✗; (b) only `Directory.Read.All` held → green "✓ covered" pill, first option muted with ✗, green ✓ next to `Directory.Read.All`; (c) least-privileged held → "✓ covered" and ✓ next to it; (d) several held → ✓ next to each held one; (e) single-option requirement held → pill only.
 - Panel B on Results, Licenses and Teams policies lists exactly the steps executed in that request with their real outcome, ms, ×N and count: with a fake Graph returning 403 for groups after 1 call and 404 for Teams config, the boxes show "permission missing (403)" for `group` (×1) and "not found (404)" for `teams_config`; changing the fake changes the boxes with no code change.
 - No outcome text or permission state is hard-coded (code review check: all rows come from the step catalog + trace + token roles).
 
