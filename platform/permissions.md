@@ -184,6 +184,9 @@ Rendered form: `[✓ covered] LicenseAssignment.Read.All ✗ (alternative, one i
 - When only an alternative is held, the recommended (first) option is still shown (muted, ✗) so the operator
   can move to least privilege.
 - Status is never conveyed by colour alone (glyph + pill text; `title`/accessible text "granted"/"not granted").
+- **One renderer for every permission display**: the permission popovers, the logs/permissions page (required
+  permissions list and feature table), locked-tab permission cards and the About page all use this same cell, so
+  the rule never diverges between screens.
 - Legend line under the table: "covered = the app can make this request with at least one of the listed
   permissions; next to each permission ✓ = granted, ✗ = not granted. Alternatives: one is enough."
 
