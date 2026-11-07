@@ -284,9 +284,15 @@ scheduled window is therefore computed, not fixed:
   runs succeeded) needs a manual `--hours 719` backfill while it is still inside Graph's 30-day retention.
 - Pair it with an alert when the last successful call ingest is older than ~1 h (collector or DB down).
 
+### Retention
+
+After `raw_retention_days` (default 90) the scheduled ingest's daily retention step empties `sessions_raw` and sets
+`raw_pruned_at`; `reprocess()` skips those rows. Rationale, sizes and rules: ../../platform/database.md "Raw
+payload retention". At ~20,000 records/day this keeps growth near a third of storing everything.
+
 ### Reprocess
 
-`reprocess()` re-derives every stored record from `raw` / `participants_raw` / `sessions_raw` with the current
+`reprocess()` re-derives every stored (non-pruned) record from `raw` / `participants_raw` / `sessions_raw` with the current
 derive code, through the same `save_record` path (run id null → `last_seen_run` preserved), without any Graph
 request. Also deletes orphan bot identities left by older derive versions (identity whose display name equals
 its external id, empty UPN, referenced by no call, organizer or directory user). Logs `db.reprocess`

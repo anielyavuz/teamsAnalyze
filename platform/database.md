@@ -39,6 +39,22 @@ transaction per batch, logs `db.reprocess` with counts and duration. It never wr
 Procedure when derive logic changes: bump `DERIVE_VERSION`, add a row to the module doc's version history,
 deploy, run reprocess, verify from a separate session.
 
+### Raw payload retention (owner decision, Nov 2026)
+
+Raw JSON is kept because Graph deletes records after 30 days and re-deriving is the only way to apply a logic fix
+to history (in the reference, a classification fix corrected a 42-day-old record this way). It is **not** kept
+forever:
+
+- Setting `raw_retention_days` (default **90**, `0` = never prune). Each module declares which raw payload is
+  heavy and prunable; for call records that is `sessions_raw` (~70 % of the stored size; measured per record on
+  disk, compressed: raw ~1.2 KB, participants ~0.7 KB, sessions ~9.2 KB, derived ~1.7 KB).
+- Pruning empties only the heavy payload and stamps `raw_pruned_at`; derived data, the small raw record and the
+  participants stay. It runs as a **step of the scheduled ingest, at most once a day** (no separate scheduler),
+  in batches of ~1,000 rows (`FOR UPDATE SKIP LOCKED`), logs `retention.done` (records, freed MB).
+- `reprocess` **skips** pruned rows (logs `skipped_pruned`) — re-deriving from an emptied payload would erase
+  their quality/timeline data. Their derived values become final.
+- Database-level compression changes (e.g. lz4) and archiving to files are optional and not part of the baseline.
+
 ## 3. Connections
 
 | Connection | Role | Used by | RLS |
