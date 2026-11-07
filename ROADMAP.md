@@ -132,6 +132,7 @@ The owner's next interest is video conferencing / rooms, so track A is recommend
 | 11 | `messaging` | Step 3 | Usage report pipeline (302 + CSV) |
 | 12 | `copilot` | 4, 11 (shares report pipeline) | Copilot adoption |
 | 13 | `transcripts` | 5 (meetings), Step 3 | Metadata only; needs tenant-side policy setup |
+| 14 | `cisco-device-logs` (track A add-on) | 6 (room/device inventory, optional), `platform/secrets.md`, an on-prem collector | Raw device + Teams Android logs for Cisco rooms; credential guardrails and rotation. Lab smoke test against one real device before any customer device |
 
 Every module step DoD: the module doc's §12 acceptance criteria, plus:
 

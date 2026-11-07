@@ -387,3 +387,4 @@ unavailable → see §7.7; empty usage → "No meetings joined by rooms in this 
 - Remote actions: out of scope while read-only; would need `TeamworkDevice.ReadWrite.All`, confirmation flows and
   audit — and the API is being retired.
 - Snapshot cadence: more frequent device polls improve flap counts (4 requests per device per poll).
+- Raw device logs (not available from Graph): see [../cisco-device-logs/DESIGN.md](../cisco-device-logs/DESIGN.md) for Cisco RoomOS devices (credential-based local collection).

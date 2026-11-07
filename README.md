@@ -40,6 +40,7 @@ Teams policies).
 | `platform/ingest-scheduler.md` | Ingest runner, run ids, step isolation, cadence, freshness line |
 | `platform/deployment.md` | Generic Linux/systemd + reverse proxy, environment variables, backups, deploy |
 | `platform/testing.md` | Test database, fake Graph layer, leak tests, screenshots, acceptance gates |
+| `platform/secrets.md` | **Security-critical**: encrypted, write-only storage of third-party secrets (device passwords), key handling, rotation |
 | `modules/<folder>/DESIGN.md` | One design per module, all following the template in `CONVENTIONS.md` |
 
 ## Read order for an implementing agent
@@ -77,6 +78,7 @@ unless the module document states otherwise.
 | Call search | [modules/call-search](modules/call-search/DESIGN.md) | Server-side paged search/filter/export of call and meeting records, record detail | designed |
 | Rooms and devices | [modules/rooms-devices](modules/rooms-devices/DESIGN.md) | Teams Rooms fleet, device health, availability, utilisation, room quality | designed |
 | About / transparency | [modules/about-transparency](modules/about-transparency/DESIGN.md) | What the system collects, which permissions it uses and why, traffic estimate | designed |
+| Cisco device logs | [modules/cisco-device-logs](modules/cisco-device-logs/DESIGN.md) | Incremental (30 s) collection of Cisco RoomOS + Teams Android logs with per-device encrypted credentials, latest state, guardrails, password rotation | designed (technical note) |
 
 Platform screens that are **not** modules in this catalog but exist from Step 0: sign-in, Admin (users,
 roles, settings, access audit, preview-as-user), Logs and permissions. See `platform/auth-rbac.md`,
