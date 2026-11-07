@@ -319,6 +319,7 @@ run. History of the reference (keep numbering continuity or restart at 1 with th
 | 7 | room/device platform codes (`roomSystem`, `surfaceHub`, `ipPhone`, `holoLens`) |
 | 8 | language-neutral derived data: no labels, no local time; events = `{offset_s, kind, code, p}` |
 | 9 | connected + failureInfo = `interrupted`; `failed` only when not connected |
+| 10 | escalated 1:1: `groupCall` + no join URL + exactly 2 humans → `peerToPeer` (`graph_type`, `escalated` kept) |
 
 ### 7.1 Record classification (used by every module, must be identical everywhere)
 
